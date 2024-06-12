@@ -53,6 +53,6 @@ module Authentication
   end
 
   def store_location
-    session[:user_return_to] = request.original_url if request.get? && request.local?
+    session[:user_return_to] = request.original_url if request.get?
   end
 end
