@@ -13,7 +13,16 @@ class ConfirmationsController < ApplicationController
   end
 
   def edit
-    @user = User.find_signed(params[:confirmation_token], purpose: :confirm_email)
+    expected_email = params[:email].strip.downcase
+
+    # It's possible that the email address that we're confirming is the 
+    # primary "email" field or the secondary "unconfirmed_email" field.
+    # We need to check both fields to find the user, but will only check
+    # the primary field if the secondary field is null.
+    @user = (User.where(unconfirmed_email: expected_email).
+               or(User.where(email: expected_email, unconfirmed_email: nil))).
+        find_signed(params[:confirmation_token],
+                    purpose: User.email_confirmation_purpose_for(expected_email))
     if @user.present? && @user.unconfirmed_or_reconfirming?
       if @user.confirm!
         login @user

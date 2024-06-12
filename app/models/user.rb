@@ -53,8 +53,17 @@ class User < ApplicationRecord
     end
   end
 
+  def self.email_confirmation_purpose_for(email)
+    "confirm_email: #{email}"
+  end
+
+  def email_confirmation_purpose
+    self.class.email_confirmation_purpose_for(confirmable_email)
+  end
+
   def generate_confirmation_token
-    signed_id expires_in: CONFIRMATION_TOKEN_EXPIRATION, purpose: :confirm_email
+    signed_id expires_in: CONFIRMATION_TOKEN_EXPIRATION,
+      purpose: email_confirmation_purpose
   end
 
   def generate_password_reset_token
@@ -63,7 +72,7 @@ class User < ApplicationRecord
 
   def send_confirmation_email!
     confirmation_token = generate_confirmation_token
-    UserMailer.confirmation(self, confirmation_token).deliver_now
+    UserMailer.confirmation(self, confirmation_token, confirmable_email).deliver_now
   end
 
   def send_password_reset_email!

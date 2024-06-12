@@ -7,7 +7,7 @@ class UserMailerTest < ActionMailer::TestCase
 
   test "confirmation" do
     confirmation_token = @user.generate_confirmation_token
-    mail = UserMailer.confirmation(@user, confirmation_token)
+    mail = UserMailer.confirmation(@user, confirmation_token, @user.unconfirmed_email)
     assert_equal "Confirmation Instructions", mail.subject
     assert_equal [@user.email], mail.to
     assert_equal [User::MAILER_FROM_EMAIL], mail.from

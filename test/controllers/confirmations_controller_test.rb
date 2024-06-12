@@ -11,7 +11,7 @@ class ConfirmationsControllerTest < ActionDispatch::IntegrationTest
     freeze_time do
       confirmation_token = @unconfirmed_user.generate_confirmation_token
 
-      get edit_confirmation_path(confirmation_token)
+      get edit_confirmation_path(confirmation_token, email: @unconfirmed_user.confirmable_email)
 
       assert @unconfirmed_user.reload.confirmed?
       assert_equal Time.now, @unconfirmed_user.confirmed_at
@@ -26,7 +26,7 @@ class ConfirmationsControllerTest < ActionDispatch::IntegrationTest
     freeze_time do
       confirmation_token = @reconfirmed_user.generate_confirmation_token
 
-      get edit_confirmation_path(confirmation_token)
+      get edit_confirmation_path(confirmation_token, email: unconfirmed_email)
 
       assert @reconfirmed_user.reload.confirmed?
       assert_equal Time.current, @reconfirmed_user.reload.confirmed_at
@@ -44,7 +44,7 @@ class ConfirmationsControllerTest < ActionDispatch::IntegrationTest
     freeze_time do
       confirmation_token = @reconfirmed_user.generate_confirmation_token
 
-      get edit_confirmation_path(confirmation_token)
+      get edit_confirmation_path(confirmation_token, email: @confirmed_user.confirmable_email)
 
       assert_equal original_email, @reconfirmed_user.reload.email
       assert_redirected_to new_confirmation_path
@@ -56,7 +56,7 @@ class ConfirmationsControllerTest < ActionDispatch::IntegrationTest
     confirmation_token = @unconfirmed_user.generate_confirmation_token
 
     travel_to 601.seconds.from_now do
-      get edit_confirmation_path(confirmation_token)
+      get edit_confirmation_path(confirmation_token, email: @unconfirmed_user.confirmable_email)
 
       assert_nil @unconfirmed_user.reload.confirmed_at
       assert_not @unconfirmed_user.reload.confirmed?
@@ -66,7 +66,15 @@ class ConfirmationsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should redirect if confirmation link is incorrect" do
-    get edit_confirmation_path("not_a_real_token")
+    get edit_confirmation_path("not_a_real_token", email: @unconfirmed_user.confirmable_email)
+    assert_redirected_to new_confirmation_path
+    assert_not_nil flash[:alert]
+  end
+
+  test "should redirect if confirmation email is incorrect" do
+    confirmation_token = @unconfirmed_user.generate_confirmation_token
+
+    get edit_confirmation_path(confirmation_token, email: "not_the_email@gmail.com")
     assert_redirected_to new_confirmation_path
     assert_not_nil flash[:alert]
   end
@@ -99,7 +107,7 @@ class ConfirmationsControllerTest < ActionDispatch::IntegrationTest
 
       login @confirmed_user
 
-      get edit_confirmation_path(confirmation_token)
+      get edit_confirmation_path(confirmation_token, email: @confirmed_user.confirmable_email)
 
       assert_not_equal Time.current, @confirmed_user.reload.confirmed_at
       assert_redirected_to new_confirmation_path
@@ -115,7 +123,7 @@ class ConfirmationsControllerTest < ActionDispatch::IntegrationTest
 
       confirmation_token = @reconfirmed_user.generate_confirmation_token
 
-      get edit_confirmation_path(confirmation_token)
+      get edit_confirmation_path(confirmation_token, email: unconfirmed_email)
 
       assert_equal Time.current, @reconfirmed_user.reload.confirmed_at
       assert @reconfirmed_user.reload.confirmed?
@@ -124,6 +132,19 @@ class ConfirmationsControllerTest < ActionDispatch::IntegrationTest
       assert_redirected_to root_path
       assert_not_nil flash[:notice]
     end
+  end
+
+  test "should prevent reuse of confirmation token" do
+    login @unconfirmed_user
+
+    confirmation_token = @unconfirmed_user.generate_confirmation_token
+
+    get edit_confirmation_path(confirmation_token, email: @unconfirmed_user.confirmable_email)
+    assert @unconfirmed_user.reload.confirmed?
+    @unconfirmed_user.update(unconfirmed_email: "not_the_same@example.com")
+
+    get edit_confirmation_path(confirmation_token, email: @unconfirmed_user.unconfirmed_email)
+    assert_redirected_to new_confirmation_path
   end
 
   test "should prevent authenticated user from submitting the confirmation form" do
