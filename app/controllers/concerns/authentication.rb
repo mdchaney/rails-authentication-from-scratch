@@ -3,6 +3,7 @@ module Authentication
 
   included do
     before_action :current_user
+    helper_method :current_active_session
     helper_method :current_user
     helper_method :user_signed_in?
   end
@@ -41,10 +42,14 @@ module Authentication
   private
 
   def current_user
-    Current.user = if session[:current_active_session_id].present?
-      ActiveSession.find_by(id: session[:current_active_session_id])&.user
+    Current.user ||= current_active_session&.user
+  end
+
+  def current_active_session
+    Current.active_session ||= if session[:current_active_session_id].present?
+      ActiveSession.find_by(id: session[:current_active_session_id])
     elsif cookies[:remember_token]
-      ActiveSession.find_by(remember_token: cookies.encrypted[:remember_token])&.user
+      ActiveSession.find_by(remember_token: cookies.encrypted[:remember_token])
     end
   end
 
