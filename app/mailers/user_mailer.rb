@@ -6,9 +6,10 @@ class UserMailer < ApplicationMailer
   #
   #   en.user_mailer.confirmation.subject
   #
-  def confirmation(user, confirmation_token)
+  def confirmation(user, confirmation_token, confirmable_email)
     @user = user
     @confirmation_token = confirmation_token
+    @confirmable_email = confirmable_email
 
     mail to: @user.confirmable_email, subject: "Confirmation Instructions"
   end
