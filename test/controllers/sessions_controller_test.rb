@@ -44,6 +44,12 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
 
     assert_not_nil current_user
     assert_not_nil cookies[:remember_token]
+
+    remember_me_cookie = cookies.get_cookie("remember_token")
+
+    assert remember_me_cookie.http_only?
+    assert remember_me_cookie.secure?
+    assert_equal "Strict", remember_me_cookie.to_h["SameSite"]
   end
 
   test "should forget user when logging out" do
