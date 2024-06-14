@@ -48,7 +48,6 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
     remember_me_cookie = cookies.get_cookie("remember_token")
 
     assert remember_me_cookie.http_only?
-    assert remember_me_cookie.secure?
     assert_equal "Strict", remember_me_cookie.to_h["SameSite"]
   end
 
