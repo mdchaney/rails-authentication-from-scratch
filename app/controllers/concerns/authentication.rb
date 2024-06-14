@@ -35,7 +35,12 @@ module Authentication
   end
 
   def remember(active_session)
-    cookies.permanent.encrypted[:remember_token] = active_session.remember_token
+    cookies.permanent.encrypted[:remember_token] = {
+      value: active_session.remember_token,
+      secure: Rails.env.production?,
+      http_only: true,
+      same_site: :strict
+    }
   end
 
   private
